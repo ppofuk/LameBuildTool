@@ -376,7 +376,11 @@ class Recipe(object):
         if self.filename == "./" or self.filename == ".":
             self.filename = ".lbt"
 
-        self._open_file(self.filename)
+        try:
+            self._open_file(self.filename)
+        except IOError:
+            print "Can not open " + self.filename + ". Use --help for more info."
+            exit()
 
 
     def _open_file(self, filename):
@@ -408,21 +412,45 @@ class Recipe(object):
             self._defines = recipe['defines']
 
 
-    def get_makefile(self):
+    def get_makefiles(self):
         """
-        Generates makefile string.
+        Generates makefile instructions.
 
         Returns:
           Makefile string.
         """
+        makefiles = {}
+
         makefile_str = ""
         makefile_str += "\n".join(self._defines)
         makefile_str += "\n\n"
 
         for target in self._targets:
-            makefile_str += target.give_makefile()
+            try:
+                out_path = target.out
+                makefiles[out_path] = ""
+            except AttributeError:
+                pass
 
-        return makefile_str
+        for out_path in sorted(makefiles.iterkeys()):
+            makefile_str += 'include ' + out_path + "\n"
+
+
+        makefile_str += "\n\n"
+
+        for target in self._targets:
+            try: 
+                out_path = target.out
+                try: 
+                    makefiles[out_path] += target.give_makefile() + "\n"
+                except KeyError:
+                    makefiles[out_path] = target.give_makefile()
+                
+            except AttributeError:
+                makefile_str += target.give_makefile()
+
+        makefiles["Makefile"] = makefile_str
+        return makefiles
 
 
 class TargetExecute(Attributed):
@@ -451,70 +479,11 @@ class TargetExecute(Attributed):
         return makefile_str + "\n"
 
 
-
-from distutils.dir_util import copy_tree
-class NewStructure(object):
-    
-    
-
-    def __init__(self, target_path, language="cpp", of_type="project"):
-        self.template_path = "/".join(["templates", of_type, "_".join([language, of_type])])
-        self.project_path = target_path.split("/")
-        self.project_name = self.project_path[-1]
-        self._lbt = None
-        copy_tree(sys.prefix + "/share/lbt/" + self.template_path, target_path)
-        os.chdir(target_path)
-        dirlist = os.listdir("./")
-        print(" [+] Creating new folder structure for project")
-        print(" " * 4 + "{}/".format(self.project_name))
-        for item in reversed(sorted(dirlist)):
-            print(" " * 4 + "...." + "{}".format(item))
-        
-        print(" [+] Creating makefile in {}".format(target_path + "/"))
-        MainApp().make_makefile(Recipe())
-
-        
-        print(" [+] Collecting data for config.h ...")
-        config_dict = dict()
-        config_dict["name"] = self.project_name
-        config_dict["codename"] = raw_input("Application codename: ")
-        config_dict["copyright_years"] = raw_input("Application copyright years: ")
-        config_dict["vendor_id"] = raw_input("Vendor ID: ")
-        config_dict["vendor_name"] = raw_input("Vendor name: ")
-        config_dict["vendor_url"] = raw_input("Vendor URL: http(s)://")
-        config_dict["application_id"] = raw_input("Application ID (com.appzor): ")
-        # TODO: save config dict to .lbt
-
-        with open(".lbt") as conf:
-            self._lbt = json.loads(conf.read())
-        with open(".lbt", "w") as conf:
-            self._lbt["project_config"] = config_dict
-            conf.write(json.dumps(self._lbt))
-
-        with open("src/config.h") as conf:
-            template = conf.read()  #"".join([line for line in conf])
-        with open("src/config.h", "w") as conf:
-            conf.write(template.format(**config_dict))
-            
-        print(" [+] Generating logging module")
-        # TODO: setup logging
-
-        print(" [+] Generating stub tests")
-        # TODO: setup UnitTest++
-
-
-
 class MainApp:
-
-
     def __init__(self, opts=None):
         if opts:
             if opts.make_makefile:
                 self.make_makefile(Recipe(opts.make_makefile))
-                
-            if opts.new_project:
-                self.new_project(opts.new_project)
-
 
     def __new__(self, *args, **kwargs):
         """Singleton override"""
@@ -524,21 +493,11 @@ class MainApp:
             
 
     def make_makefile(self, recipe):
-        try:
-            with open("makefile", "w") as f:
-                f.write(recipe.get_makefile())
-            print(" [+] Makefile generated successfully.")
-        except IOError:
-            print(" [-] There was an error while generating makefile. Try again, or report issue.")
-            
-
-    def new_project(self, target_path):
-        """Generate new project from template"""
-        # TODO(sam): generate project structure
-        # TODO(sam): download testing lib for project
-        new_project = NewStructure(target_path)
-
-
-    def new_library(self):
-        """Generate new library from template""" 
-        pass
+        recipes = recipe.get_makefiles()
+        for filename, makefiles_str in recipes.iteritems():
+            try:
+                with open(filename, "w") as f:
+                    f.write(makefiles_str)
+                print(" [+] Wrote " + filename + " successfully.")
+            except IOError:
+                print(" [-] There was an error while generating " + filename + ".")

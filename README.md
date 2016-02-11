@@ -24,12 +24,6 @@ executable script to:
     
     /usr/bin/
 
-and template resources to:
-
-    /usr/share/lbt/templates/library/*
-    /usr/share/lbt/templates/project/*
-
-
 * Remember that current version is supported only with Python2.
 * If you are using python2 with alias "python" you need to switch shebang values inside those scripts otherwise you will get errors.
 
@@ -41,20 +35,8 @@ Generate makefile:
 
     lbtcli -m [recipe.json]
 
-Generate project structure from template:
-
-    lbtcli -np [path/where/to/generate/project] 
-
-To update makefile in given project you can use:
-
-    lbtcli -m .
-    # or
-    lbtcli -m ./
-
-Generate library structure from template
-
-    lbtcli -nl [path/to/existing/project]
-
+If not specified, default is:
+    lbtcli -m .lbt
 
 
 Recipes for sources
@@ -96,7 +78,8 @@ A skeleton for typical executable looks something like this:
                 "gtk"
             ],
             "obj_path": "obj/"
-        }
+        },
+        "out": "example.mk"
     }
 }
 ```
@@ -181,13 +164,18 @@ For example:
 will define bin/some_target as default target when calling ```make```.
 Use this in example if you use ```exec``` types recipes in conjunction with ```source``` recipes so you can define a default.
 
+Out attribute
+-------------
+This attribute is optional. 
+If an ```out``` string attribute exists in a recipe, the recipe will be written to that attributes value and ```include [out value]``` will be added to Makefile.
+Recipes with same ```out``` values are appended. 
+
+
 TODO
 ----
 - [x] get drunk (bug found: infinite iteration ongoing in head object at 0x0)
 - [ ] get the batmobile back (https://fbcdn-sphotos-d-a.akamaihd.net/hphotos-ak-prn1/524514_626427844064708_686258337_n.jpg)
 - [ ] validate JSON with lbt rules before loading it
-- [ ] support for compiling libraries
-- [ ] parsing command line options (yeah, I'm lazy, argv ftw!)
 - [ ] support for loading more recipes
 - [ ] fix exec and dependencies with source
 - [ ] do some tests
