@@ -27,7 +27,7 @@ setup(name = src.__program__,
       author_email = src.__author__,
       packages = ["", ""],
       package_dir = {"": "src"},
-      data_files = generate_data_files("templates"),
+      #data_files = generate_data_files("templates"),
       #package_data = {"": ["src/templates.tar.gz"]},
       scripts = ["src/lbtcli"]) 
 
