@@ -12,7 +12,12 @@ if __name__ == "__main__":
 
     parser.add_argument("-m", "--make_makefile", default=".lbt", 
                         help = "Generate makefile from specified json file")
+    parser.add_argument("--source-pattern", default="*.cc", 
+                        help = "Unix filename pattern for picking up sourceas with --list-sources")
+    parser.add_argument("--list-sources", action="store_true", help = "Only list sources")
+    parser.add_argument("--dir", default=".", help = "Directory for --list-sources")
 
     args = parser.parse_args()
+
 
     MainApp(args)

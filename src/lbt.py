@@ -482,6 +482,10 @@ class TargetExecute(Attributed):
 class MainApp:
     def __init__(self, opts=None):
         if opts:
+            if opts.list_sources:
+                self.list_sources(opts.dir, opts.source_pattern)
+                sys.exit(0)
+                
             if opts.make_makefile:
                 self.make_makefile(Recipe(opts.make_makefile))
 
@@ -501,3 +505,10 @@ class MainApp:
                 print(" [+] Wrote " + filename + " successfully.")
             except IOError:
                 print(" [-] There was an error while generating " + filename + ".")
+
+
+    def list_sources(self, directory, source_pattern):
+        source_patterns = source_pattern.split(',')
+        sources = list_iterate_directory(directory, source_patterns) # TODO: add ignore patterns
+        print(json.dumps(sources, indent=4))
+         
