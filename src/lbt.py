@@ -60,7 +60,7 @@ def list_iterate_directory(directory='./', sources=['*.cc'], ignores=[]):
     if directory[-1:] == '/':
         directory = directory[:-1]
 
-    os.chdir(directory)
+    # os.chdir(abspath)
 
     matches = []
     for root, directory_names, file_names in os.walk(directory):
